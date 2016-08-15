@@ -7,7 +7,10 @@ It works with asterisk versions 13.x or later.
 
 The source of the patches is in debian/patches directory. The res_xmpp.c is from asterisk vanilla 13.10.0 sources.
 
-Tested with xivo 16.10.
+Tested with xivo 16.10. (Thanks to Ward Mundy to give me the informations and thank to Asterisk wiki for the documentation)
+
+- http://nerdvittles.com
+- https://wiki.asterisk.org/wiki/display/AST/Calling+using+Google
 
 Requirements
 ------------
