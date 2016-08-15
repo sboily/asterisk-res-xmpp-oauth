@@ -9,13 +9,13 @@
 
 INSTALL = install
 ASTETCDIR = $(INSTALL_PREFIX)/etc/asterisk
-SAMPLENAME = res_xmpp.conf.sample
+SAMPLENAME = res_xmpp_oauth.conf.sample
 CONFNAME = $(basename $(SAMPLENAME))
 
-TARGET = res_xmpp.so
+TARGET = res_xmpp_oauth.so
 OBJECTS = res_xmpp.o
 CFLAGS += -Wall -Wextra -Wno-unused-parameter -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Winit-self -Wmissing-format-attribute \
-          -Wformat=2 -g -fPIC -D_GNU_SOURCE -D'AST_MODULE="res_xmpp"' 
+          -Wformat=2 -g -fPIC -D_GNU_SOURCE -D'AST_MODULE="res_xmpp_oauth"' 
 LIBS += -liksemel
 LDFLAGS = -Wall -shared
 
@@ -32,14 +32,14 @@ $(TARGET): $(OBJECTS)
 	$(CC) -c $(CFLAGS) -o $@ $<
 
 patch:
-	patch -p0 < patches/oauth_support.diff
+	patch -p0 < debian/patches/oauth_support.diff
 
 install: $(TARGET)
 	mkdir -p $(DESTDIR)/usr/lib/asterisk/modules
 	install -m 644 $(TARGET) $(DESTDIR)/usr/lib/asterisk/modules/
-	@echo " +----------- res_xmpp installed ------------+"
+	@echo " +-------- res_xmpp_oauth installed ---------+"
 	@echo " +                                           +"
-	@echo " + res_xmpp has successfully                 +"
+	@echo " + res_xmpp_oauth has successfully           +"
 	@echo " + been installed.                           +"
 	@echo " + If you would like to install the sample   +"
 	@echo " + configuration file run:                   +"
@@ -53,4 +53,4 @@ clean:
 
 samples:
 	$(INSTALL) -m 644 $(SAMPLENAME) $(DESTDIR)$(ASTETCDIR)/$(CONFNAME)
-	@echo " ------- res_xmpp config installed ---------"
+	@echo " ------- res_xmpp_oauth config installed ---------"
