@@ -44,3 +44,11 @@ Add gv.conf in /etc/asterisk/extensions_extra.d/
     asterisk -rx "core reload"
 
 Add your google voice DID in incoming call on the xivo web interface.
+
+To do call with google voice add a custom trunk with:
+
+ * name googlevoice
+ * interface Motif/googlevoice
+ * suffix @voice.google.com
+
+In your outgoing call for google voice, use this custom trunk, please add the subroutine subr-google-voice.
