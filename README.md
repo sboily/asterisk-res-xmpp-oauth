@@ -22,3 +22,10 @@ To install the sample configuration file, issue the following command after
 the 'make install' command:
 
     $ make samples
+
+Load the module:
+
+    $ asterisk -r
+    $ modules load res_xmpp_oauth.so
+
+Or add the module on your /etc/asterisk/modules.conf
