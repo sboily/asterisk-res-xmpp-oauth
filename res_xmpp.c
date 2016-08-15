@@ -5,21 +5,6 @@
  *
  * Joshua Colp <jcolp@digium.com>
  *
- * Modified by carib8 on DSL Reports to provide OAUTH support
- * See the forum posts for details: http://nerd.bz/1Dr5e9B
- * res_xmpp.c for Asterisk 13: http://nerd.bz/1Dr5sNN
- *
- * Further July, 2015 mods by Ward Mundy & Associate LLC with
- * embedded Incredible PBX OAuth Client ID and Secret shown below
- * Client ID: 466295438629-prpknsovs0b8gjfcrs0sn04s9hgn8j3d.apps.googleusercontent.com
- * Client Secret: 4ewzJaCx275clcT4i4Hfxqo2
- *
- * Copy this file into Asterisk 13 /res directory. Then, cd.. and
- * Recompile Asterisk: make && make install && amportal restart
- *
- * To activate new Google Voice trunks using OAUTH credentials,
- * proceed at Step #2 using this tutorial: http://nerd.bz/1JaO4ij
- *
  * See http://www.asterisk.org for more information about
  * the Asterisk project. Please do not directly contact
  * any of the maintainers of this project for assistance;
@@ -42,7 +27,7 @@
  * A reference module for interfacting Asterisk directly as a client or component with
  * an XMPP/Jabber compliant server.
  *
- * This module is based upon the original res_jabber and res_xmpp as done by Matt O'Gorman.
+ * This module is based upon the original res_jabber as done by Matt O'Gorman.
  *
  */
 
@@ -63,7 +48,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 428681 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <ctype.h>
 #include <iksemel.h>
@@ -76,7 +61,6 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 428681 $")
 #include "asterisk/manager.h"
 #include "asterisk/cli.h"
 #include "asterisk/config_options.h"
-#include "asterisk/json.h"
 
 /*** DOCUMENTATION
 	<application name="JabberSend" language="en_US" module="res_xmpp">
@@ -339,9 +323,6 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 428681 $")
 				<configOption name="secret">
 					<synopsis>XMPP password</synopsis>
 				</configOption>
-				<configOption name="refresh_token">
-					<synopsis>XMPP refresh token</synopsis>
-				</configOption>
 				<configOption name="serverhost">
 					<synopsis>Route to server, e.g. talk.google.com</synopsis>
 				</configOption>
@@ -480,7 +461,6 @@ struct ast_xmpp_client_config {
 		AST_STRING_FIELD(name);        /*!< Name of the client connection */
 		AST_STRING_FIELD(user);        /*!< Username to use for authentication */
 		AST_STRING_FIELD(password);    /*!< Password to use for authentication */
-		AST_STRING_FIELD(refresh_token);    /*!< Password to use for authentication */
 		AST_STRING_FIELD(server);      /*!< Server hostname */
 		AST_STRING_FIELD(statusmsg);   /*!< Status message for presence */
 		AST_STRING_FIELD(pubsubnode);  /*!< Pubsub node */
@@ -490,6 +470,7 @@ struct ast_xmpp_client_config {
 	int message_timeout;            /*!< Timeout for messages */
 	int priority;                   /*!< Resource priority */
 	struct ast_flags flags;         /*!< Various options that have been set */
+	struct ast_flags mod_flags;     /*!< Global options that have been modified */
 	enum ikshowtype status;         /*!< Presence status */
 	struct ast_xmpp_client *client; /*!< Pointer to the client */
 	struct ao2_container *buddies;  /*!< Configured buddies */
@@ -548,7 +529,6 @@ static ast_cond_t message_received_condition;
 static ast_mutex_t messagelock;
 
 static int xmpp_client_config_post_apply(void *obj, void *arg, int flags);
-static void fetch_access_token(struct ast_xmpp_client_config *cfg);
 
 /*! \brief Destructor function for configuration */
 static void ast_xmpp_client_config_destructor(void *obj)
@@ -763,8 +743,6 @@ static void *xmpp_config_alloc(void)
 		goto error;
 	}
 
-	ast_set_flag(&cfg->global->general, XMPP_AUTOREGISTER | XMPP_AUTOACCEPT | XMPP_USETLS | XMPP_USESASL | XMPP_KEEPALIVE);
-
 	if (!(cfg->clients = ao2_container_alloc(1, xmpp_config_hash, xmpp_config_cmp))) {
 		goto error;
 	}
@@ -784,8 +762,8 @@ static int xmpp_config_prelink(void *newitem)
 	if (ast_strlen_zero(clientcfg->user)) {
 		ast_log(LOG_ERROR, "No user specified on client '%s'\n", clientcfg->name);
 		return -1;
-	} else if (ast_strlen_zero(clientcfg->refresh_token)) {
-		ast_log(LOG_ERROR, "No refresh_token specified on client '%s'\n", clientcfg->name);
+	} else if (ast_strlen_zero(clientcfg->password)) {
+		ast_log(LOG_ERROR, "No password specified on client '%s'\n", clientcfg->name);
 		return -1;
 	} else if (ast_strlen_zero(clientcfg->server)) {
 		ast_log(LOG_ERROR, "No server specified on client '%s'\n", clientcfg->name);
@@ -800,7 +778,7 @@ static int xmpp_config_prelink(void *newitem)
 
 	/* If any configuration options are changing that would require reconnecting set the bit so we will do so if possible */
 	if (strcmp(clientcfg->user, oldclientcfg->user) ||
-	    strcmp(clientcfg->refresh_token, oldclientcfg->refresh_token) ||
+	    strcmp(clientcfg->password, oldclientcfg->password) ||
 	    strcmp(clientcfg->server, oldclientcfg->server) ||
 	    (clientcfg->port != oldclientcfg->port) ||
 	    (ast_test_flag(&clientcfg->flags, XMPP_COMPONENT) != ast_test_flag(&oldclientcfg->flags, XMPP_COMPONENT)) ||
@@ -2794,13 +2772,7 @@ static int xmpp_client_authenticate_sasl(struct ast_xmpp_client *client, struct 
 	}
 
 	iks_insert_attrib(auth, "xmlns", IKS_NS_XMPP_SASL);
-	//iks_insert_attrib(auth, "mechanism", "PLAIN");
-	// new changes
-	iks_insert_attrib(auth, "mechanism", "X-OAUTH2");
-	iks_insert_attrib(auth, "auth:service", "oauth2");
-	iks_insert_attrib(auth, "xmlns:auth", "http://www.google.com/talk/protocol/auth");
-	/// new changes end
-
+	iks_insert_attrib(auth, "mechanism", "PLAIN");
 
 	if (strchr(client->jid->user, '/')) {
 		char *user = ast_strdupa(client->jid->user);
@@ -3158,6 +3130,10 @@ done:
 /*! \brief Internal function called when we authenticated as a component */
 static int xmpp_component_authenticating(struct ast_xmpp_client *client, struct ast_xmpp_client_config *cfg, int type, iks *node)
 {
+	if (!strcmp(iks_name(node), "stream:features")) {
+		return 0;
+	}
+
 	if (strcmp(iks_name(node), "handshake")) {
 		ast_log(LOG_ERROR, "Failed to authenticate component '%s'\n", client->name);
 		return -1;
@@ -3333,6 +3309,11 @@ static int xmpp_pak_presence(struct ast_xmpp_client *client, struct ast_xmpp_cli
 	int status = pak->show ? pak->show : STATUS_DISAPPEAR;
 	enum ast_device_state state = AST_DEVICE_UNAVAILABLE;
 
+	/* If this is a component presence probe request answer immediately with our presence status */
+	if (ast_test_flag(&cfg->flags, XMPP_COMPONENT) && !ast_strlen_zero(type) && !strcasecmp(type, "probe")) {
+		xmpp_client_set_presence(client, pak->from->full, iks_find_attrib(pak->x, "to"), cfg->status, cfg->statusmsg);
+	}
+
 	/* If no resource is available this is a general buddy presence update, which we will ignore */
 	if (!pak->from->resource) {
 		return 0;
@@ -3345,11 +3326,6 @@ static int xmpp_pak_presence(struct ast_xmpp_client *client, struct ast_xmpp_cli
 				pak->from->partial, client->name);
 		}
 		return 0;
-	}
-
-	/* If this is a component presence probe request answer immediately with our presence status */
-	if (ast_test_flag(&cfg->flags, XMPP_COMPONENT) && !ast_strlen_zero(type) && !strcasecmp(type, "probe")) {
-		xmpp_client_set_presence(client, pak->from->full, iks_find_attrib(pak->x, "to"), cfg->status, cfg->statusmsg);
 	}
 
 	ao2_lock(buddy->resources);
@@ -3596,12 +3572,12 @@ int ast_xmpp_client_disconnect(struct ast_xmpp_client *client)
 	}
 
 	if (client->mwi_sub) {
-		client->mwi_sub = stasis_unsubscribe(client->mwi_sub);
+		client->mwi_sub = stasis_unsubscribe_and_join(client->mwi_sub);
 		xmpp_pubsub_unsubscribe(client, "message_waiting");
 	}
 
 	if (client->device_state_sub) {
-		client->device_state_sub = stasis_unsubscribe(client->device_state_sub);
+		client->device_state_sub = stasis_unsubscribe_and_join(client->device_state_sub);
 		xmpp_pubsub_unsubscribe(client, "device_state");
 	}
 
@@ -3635,10 +3611,6 @@ static int xmpp_client_reconnect(struct ast_xmpp_client *client)
 	if (!cfg || !cfg->clients || !(clientcfg = xmpp_config_find(cfg->clients, client->name))) {
 		return -1;
 	}
-
-	ast_log(LOG_NOTICE , "Connecting to client token : %s\n" , clientcfg->refresh_token); 
-
-	fetch_access_token(clientcfg);
 
 	ast_xmpp_client_disconnect(client);
 
@@ -3782,12 +3754,12 @@ static void *xmpp_client_thread(void *data)
 
 	do {
 		if (client->state == XMPP_STATE_DISCONNECTING) {
-			ast_debug(1, "JABBER: 11 Disconnecting client '%s'\n", client->name);
+			ast_debug(1, "JABBER: Disconnecting client '%s'\n", client->name);
 			break;
 		}
 
 		if (res == IKS_NET_RWERR || client->timeout == 0) {
-			ast_debug(1, "111 Connecting client '%s'\n", client->name);
+			ast_debug(3, "Connecting client '%s'\n", client->name);
 			if ((res = xmpp_client_reconnect(client)) != IKS_OK) {
 				sleep(4);
 				res = IKS_NET_RWERR;
@@ -3863,44 +3835,16 @@ static int xmpp_client_config_merge_buddies(void *obj, void *arg, int flags)
 	return 1;
 }
 
-static void fetch_access_token(struct ast_xmpp_client_config *cfg) {
-
-	char cmd[4096];
-	char cBuf[4096];
-	const char * url = "https://www.googleapis.com/oauth2/v3/token";
-	const char * client_id = "466295438629-prpknsovs0b8gjfcrs0sn04s9hgn8j3d.apps.googleusercontent.com";
-	const char * client_secret = "4ewzJaCx275clcT4i4Hfxqo2";
-
-	memset(cmd , 0 , sizeof(cmd));
-	snprintf(cmd , sizeof(cmd) - 1 , "CURL(%s,client_id=%s&client_secret=%s&refresh_token=%s&grant_type=refresh_token)" , url, client_id, client_secret, cfg->refresh_token);
-
-	ast_log(LOG_NOTICE , "Command %s\n" , cmd);
-
-	memset(cBuf , 0 , sizeof(cBuf));
-	ast_func_read(NULL, cmd , cBuf , sizeof(cBuf) - 1);
-	ast_log(LOG_NOTICE , "Command status : %s \n" , cBuf);
-	
-	struct ast_json_error error;
-	struct ast_json * jobj = ast_json_load_string(cBuf, &error);
-	if(jobj != NULL) {
-		const char * token = ast_json_string_get(ast_json_object_get(jobj, "access_token"));
-		if(token != NULL) {
-			ast_string_field_set(cfg , password, token);	
-		}
-		ast_log(LOG_NOTICE , "access Token : %s\n", token);
-	}
-	else {
-		ast_log(LOG_ERROR , "object is NULL\n");
-	}
-}
-
 static int xmpp_client_config_post_apply(void *obj, void *arg, int flags)
 {
 	struct ast_xmpp_client_config *cfg = obj;
+	RAII_VAR(struct xmpp_config *, gcfg, ao2_global_obj_ref(globals), ao2_cleanup);
+
+	/* Merge global options that have not been modified */
+	ast_copy_flags(&cfg->flags, &gcfg->global->general, ~(cfg->mod_flags.flags) & (XMPP_AUTOPRUNE | XMPP_AUTOREGISTER | XMPP_AUTOACCEPT));
 
 	/* Merge buddies as need be */
 	ao2_callback(cfg->buddies, OBJ_MULTIPLE | OBJ_UNLINK, xmpp_client_config_merge_buddies, cfg->client->buddies);
-
 
 	if (cfg->client->reconnect) {
 		/* Disconnect the existing session since our role is changing, or we are starting up */
@@ -3924,7 +3868,7 @@ static int xmpp_client_config_post_apply(void *obj, void *arg, int flags)
 			cfg->client->jid = iks_id_new(cfg->client->stack, cfg->user);
 		}
 
-		if (!cfg->client->jid || ast_strlen_zero(cfg->client->jid->user)) {
+		if (!cfg->client->jid || (ast_strlen_zero(cfg->client->jid->user) && !ast_test_flag(&cfg->flags, XMPP_COMPONENT))) {
 			ast_log(LOG_ERROR, "Jabber identity '%s' could not be created for client '%s' - client not active\n", cfg->user, cfg->name);
 			return -1;
 		}
@@ -4574,10 +4518,13 @@ static int client_bitfield_handler(const struct aco_option *opt, struct ast_vari
 		ast_set2_flag(&cfg->flags, ast_true(var->value), XMPP_KEEPALIVE);
 	} else if (!strcasecmp(var->name, "autoprune")) {
 		ast_set2_flag(&cfg->flags, ast_true(var->value), XMPP_AUTOPRUNE);
+		ast_set2_flag(&cfg->mod_flags, 1, XMPP_AUTOPRUNE);
 	} else if (!strcasecmp(var->name, "autoregister")) {
 		ast_set2_flag(&cfg->flags, ast_true(var->value), XMPP_AUTOREGISTER);
+		ast_set2_flag(&cfg->mod_flags, 1, XMPP_AUTOREGISTER);
 	} else if (!strcasecmp(var->name, "auth_policy")) {
 		ast_set2_flag(&cfg->flags, !strcasecmp(var->value, "accept") ? 1 : 0, XMPP_AUTOACCEPT);
+		ast_set2_flag(&cfg->mod_flags, 1, XMPP_AUTOACCEPT);
 	} else if (!strcasecmp(var->name, "sendtodialplan")) {
 		ast_set2_flag(&cfg->flags, ast_true(var->value), XMPP_SEND_TO_DIALPLAN);
 	} else {
@@ -4659,7 +4606,7 @@ static int load_module(void)
 	aco_option_register_custom(&cfg_info, "auth_policy", ACO_EXACT, global_options, "accept", global_bitfield_handler, 0);
 
 	aco_option_register(&cfg_info, "username", ACO_EXACT, client_options, NULL, OPT_STRINGFIELD_T, 0, STRFLDSET(struct ast_xmpp_client_config, user));
-	aco_option_register(&cfg_info, "secret", ACO_EXACT, client_options, NULL, OPT_STRINGFIELD_T, 0, STRFLDSET(struct ast_xmpp_client_config, refresh_token));
+	aco_option_register(&cfg_info, "secret", ACO_EXACT, client_options, NULL, OPT_STRINGFIELD_T, 0, STRFLDSET(struct ast_xmpp_client_config, password));
 	aco_option_register(&cfg_info, "serverhost", ACO_EXACT, client_options, NULL, OPT_STRINGFIELD_T, 0, STRFLDSET(struct ast_xmpp_client_config, server));
 	aco_option_register(&cfg_info, "statusmessage", ACO_EXACT, client_options, "Online and Available", OPT_STRINGFIELD_T, 0, STRFLDSET(struct ast_xmpp_client_config, statusmsg));
 	aco_option_register(&cfg_info, "pubsub_node", ACO_EXACT, client_options, NULL, OPT_STRINGFIELD_T, 0, STRFLDSET(struct ast_xmpp_client_config, pubsubnode));
@@ -4668,6 +4615,11 @@ static int load_module(void)
 	aco_option_register(&cfg_info, "port", ACO_EXACT, client_options, "5222", OPT_UINT_T, 0, FLDSET(struct ast_xmpp_client_config, port));
 	aco_option_register(&cfg_info, "timeout", ACO_EXACT, client_options, "5", OPT_UINT_T, 0, FLDSET(struct ast_xmpp_client_config, message_timeout));
 
+	/* Global options that can be overridden per client must not specify a default */
+	aco_option_register_custom(&cfg_info, "autoprune", ACO_EXACT, client_options, NULL, client_bitfield_handler, 0);
+	aco_option_register_custom(&cfg_info, "autoregister", ACO_EXACT, client_options, NULL, client_bitfield_handler, 0);
+	aco_option_register_custom(&cfg_info, "auth_policy", ACO_EXACT, client_options, NULL, client_bitfield_handler, 0);
+
 	aco_option_register_custom(&cfg_info, "debug", ACO_EXACT, client_options, "no", client_bitfield_handler, 0);
 	aco_option_register_custom(&cfg_info, "type", ACO_EXACT, client_options, "client", client_bitfield_handler, 0);
 	aco_option_register_custom(&cfg_info, "distribute_events", ACO_EXACT, client_options, "no", client_bitfield_handler, 0);
@@ -4675,9 +4627,6 @@ static int load_module(void)
 	aco_option_register_custom(&cfg_info, "usesasl", ACO_EXACT, client_options, "yes", client_bitfield_handler, 0);
 	aco_option_register_custom(&cfg_info, "forceoldssl", ACO_EXACT, client_options, "no", client_bitfield_handler, 0);
 	aco_option_register_custom(&cfg_info, "keepalive", ACO_EXACT, client_options, "yes", client_bitfield_handler, 0);
-	aco_option_register_custom(&cfg_info, "autoprune", ACO_EXACT, client_options, "no", client_bitfield_handler, 0);
-	aco_option_register_custom(&cfg_info, "autoregister", ACO_EXACT, client_options, "yes", client_bitfield_handler, 0);
-	aco_option_register_custom(&cfg_info, "auth_policy", ACO_EXACT, client_options, "accept", client_bitfield_handler, 0);
 	aco_option_register_custom(&cfg_info, "sendtodialplan", ACO_EXACT, client_options, "no", client_bitfield_handler, 0);
 	aco_option_register_custom(&cfg_info, "status", ACO_EXACT, client_options, "available", client_status_handler, 0);
 	aco_option_register_custom(&cfg_info, "buddy", ACO_EXACT, client_options, NULL, client_buddy_handler, 0);
@@ -4716,6 +4665,7 @@ static int reload(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_GLOBAL_SYMBOLS | AST_MODFLAG_LOAD_ORDER, "Asterisk XMPP Interface",
+		.support_level = AST_MODULE_SUPPORT_CORE,
 		.load = load_module,
 		.unload = unload_module,
 		.reload = reload,

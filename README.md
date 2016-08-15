@@ -9,6 +9,7 @@ Requirements
 ------------
 - Asterisk 13.x (or later) header files (http://asterisk.org)
 - libiksemel libraries and header files
+- libssl libraries and header files
 - patch command
 
 Installation

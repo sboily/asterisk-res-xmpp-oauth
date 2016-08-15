@@ -1,5 +1,5 @@
---- res_xmpp.orig.c	2016-08-15 11:38:39.206243637 -0400
-+++ res_xmpp.c	2015-07-20 19:21:26.000000000 -0400
+--- res_xmpp.orig.c	2016-08-15 13:22:05.759197647 -0400
++++ res_xmpp.c	2016-08-15 13:20:06.576062286 -0400
 @@ -5,6 +5,21 @@
   *
   * Joshua Colp <jcolp@digium.com>
@@ -40,14 +40,151 @@
  
  #include <ctype.h>
  #include <iksemel.h>
-@@ -61,6 +76,7 @@
+@@ -61,16 +76,17 @@
  #include "asterisk/manager.h"
  #include "asterisk/cli.h"
  #include "asterisk/config_options.h"
 +#include "asterisk/json.h"
  
  /*** DOCUMENTATION
- 	<application name="JabberSend" language="en_US" module="res_xmpp">
+-	<application name="JabberSend" language="en_US" module="res_xmpp">
++	<application name="JabberSend" language="en_US" module="res_xmpp_oauth">
+ 		<synopsis>
+ 			Sends an XMPP message to a buddy.
+ 		</synopsis>
+ 		<syntax>
+ 			<parameter name="account" required="true">
+ 				<para>The local named account to listen on (specified in
+-				xmpp.conf)</para>
++				xmpp_oauth.conf)</para>
+ 			</parameter>
+ 			<parameter name="jid" required="true">
+ 				<para>Jabber ID of the buddy to send the message to. It can be a
+@@ -86,21 +102,21 @@
+ 			<replaceable>jid</replaceable></para>
+ 			<para>Example: JabberSend(asterisk,bob@domain.com,Hello world) sends "Hello world"
+ 			to <replaceable>bob@domain.com</replaceable> as an XMPP message from the account
+-			<replaceable>asterisk</replaceable>, configured in xmpp.conf.</para>
++			<replaceable>asterisk</replaceable>, configured in xmpp_oauth.conf.</para>
+ 		</description>
+ 		<see-also>
+-			<ref type="function" module="res_xmpp">JABBER_STATUS</ref>
+-			<ref type="function" module="res_xmpp">JABBER_RECEIVE</ref>
++			<ref type="function" module="res_xmpp_oauth">JABBER_STATUS</ref>
++			<ref type="function" module="res_xmpp_oauth">JABBER_RECEIVE</ref>
+ 		</see-also>
+ 	</application>
+-	<function name="JABBER_RECEIVE" language="en_US" module="res_xmpp">
++	<function name="JABBER_RECEIVE" language="en_US" module="res_xmpp_oauth">
+ 		<synopsis>
+ 			Reads XMPP messages.
+ 		</synopsis>
+ 		<syntax>
+ 			<parameter name="account" required="true">
+ 				<para>The local named account to listen on (specified in
+-				xmpp.conf)</para>
++				xmpp_oauth.conf)</para>
+ 			</parameter>
+ 			<parameter name="jid" required="true">
+ 				<para>Jabber ID of the buddy to receive message from. It can be a
+@@ -115,21 +131,21 @@
+ 			from the buddy identified by <replaceable>jid</replaceable> and returns the contents.</para>
+ 			<para>Example: ${JABBER_RECEIVE(asterisk,bob@domain.com)} returns an XMPP message
+ 			sent from <replaceable>bob@domain.com</replaceable> (or nothing in case of a time out), to
+-			the <replaceable>asterisk</replaceable> XMPP account configured in xmpp.conf.</para>
++			the <replaceable>asterisk</replaceable> XMPP account configured in xmpp_oauth.conf.</para>
+ 		</description>
+ 		<see-also>
+-			<ref type="function" module="res_xmpp">JABBER_STATUS</ref>
+-			<ref type="application" module="res_xmpp">JabberSend</ref>
++			<ref type="function" module="res_xmpp_oauth">JABBER_STATUS</ref>
++			<ref type="application" module="res_xmpp_oauth">JabberSend</ref>
+ 		</see-also>
+ 	</function>
+-	<function name="JABBER_STATUS" language="en_US" module="res_xmpp">
++	<function name="JABBER_STATUS" language="en_US" module="res_xmpp_oauth">
+ 		<synopsis>
+ 			Retrieves a buddy's status.
+ 		</synopsis>
+ 		<syntax>
+ 			<parameter name="account" required="true">
+ 				<para>The local named account to listen on (specified in
+-				xmpp.conf)</para>
++				xmpp_oauth.conf)</para>
+ 			</parameter>
+ 			<parameter name="jid" required="true">
+ 				<para>Jabber ID of the buddy to receive message from. It can be a
+@@ -145,14 +161,14 @@
+ 			<para>If not in roster variable will be set to 7.</para>
+ 			<para>Example: ${JABBER_STATUS(asterisk,bob@domain.com)} returns 1 if
+ 			<replaceable>bob@domain.com</replaceable> is online. <replaceable>asterisk</replaceable> is
+-			the associated XMPP account configured in xmpp.conf.</para>
++			the associated XMPP account configured in xmpp_oauth.conf.</para>
+ 		</description>
+ 		<see-also>
+-			<ref type="function" module="res_xmpp">JABBER_RECEIVE</ref>
+-			<ref type="application" module="res_xmpp">JabberSend</ref>
++			<ref type="function" module="res_xmpp_oauth">JABBER_RECEIVE</ref>
++			<ref type="application" module="res_xmpp_oauth">JabberSend</ref>
+ 		</see-also>
+ 	</function>
+-	<application name="JabberSendGroup" language="en_US" module="res_xmpp">
++	<application name="JabberSendGroup" language="en_US" module="res_xmpp_oauth">
+ 		<synopsis>
+ 			Send a Jabber Message to a specified chat room
+ 		</synopsis>
+@@ -175,7 +191,7 @@
+ 			<note><para>To be able to send messages to a chat room, a user must have previously joined it. Use the <replaceable>JabberJoin</replaceable> function to do so.</para></note>
+ 		</description>
+ 	</application>
+-	<application name="JabberJoin" language="en_US" module="res_xmpp">
++	<application name="JabberJoin" language="en_US" module="res_xmpp_oauth">
+ 		<synopsis>
+ 			Join a chat room
+ 		</synopsis>
+@@ -195,7 +211,7 @@
+ 			<para>Allows Asterisk to join a chat room.</para>
+ 		</description>
+ 	</application>
+-	<application name="JabberLeave" language="en_US" module="res_xmpp">
++	<application name="JabberLeave" language="en_US" module="res_xmpp_oauth">
+ 		<synopsis>
+ 			Leave a chat room
+ 		</synopsis>
+@@ -214,7 +230,7 @@
+ 			<para>Allows Asterisk to leave a chat room.</para>
+ 		</description>
+ 	</application>
+-	<application name="JabberStatus" language="en_US" module="res_xmpp">
++	<application name="JabberStatus" language="en_US" module="res_xmpp_oauth">
+ 		<synopsis>
+ 			Retrieve the status of a jabber list member
+ 		</synopsis>
+@@ -258,7 +274,7 @@
+ 			</enumlist>
+ 		</description>
+ 	</application>
+-	<manager name="JabberSend" language="en_US" module="res_xmpp">
++	<manager name="JabberSend" language="en_US" module="res_xmpp_oauth">
+ 		<synopsis>
+ 			Sends a message to a Jabber Client.
+ 		</synopsis>
+@@ -284,12 +300,12 @@
+ 	</info>
+ 	<info name="XMPPMessageFromInfo" language="en_US" tech="XMPP">
+ 		<para>Specifying a prefix of <literal>xmpp:</literal> will specify the
+-		account defined in <literal>xmpp.conf</literal> to send the message from.
++		account defined in <literal>xmpp_oauth.conf</literal> to send the message from.
+ 		Note that this field is required for XMPP messages.</para>
+ 	</info>
+-	<configInfo name="res_xmpp" language="en_US">
++	<configInfo name="res_xmpp_oauth" language="en_US">
+ 		<synopsis>XMPP Messaging</synopsis>
+-		<configFile name="xmpp.conf">
++		<configFile name="xmpp_oauth.conf">
+ 			<configObject name="global">
+ 				<synopsis>Global configuration settings</synopsis>
+ 				<configOption name="debug">
 @@ -323,6 +339,9 @@
  				<configOption name="secret">
  					<synopsis>XMPP password</synopsis>
@@ -111,6 +248,15 @@
  	    strcmp(clientcfg->server, oldclientcfg->server) ||
  	    (clientcfg->port != oldclientcfg->port) ||
  	    (ast_test_flag(&clientcfg->flags, XMPP_COMPONENT) != ast_test_flag(&oldclientcfg->flags, XMPP_COMPONENT)) ||
+@@ -822,7 +844,7 @@
+ struct aco_type *client_options[] = ACO_TYPES(&client_option);
+ 
+ struct aco_file res_xmpp_conf = {
+-	.filename = "xmpp.conf",
++	.filename = "xmpp_oauth.conf",
+ 	.alias = "jabber.conf",
+ 	.types = ACO_TYPES(&global_option, &client_option),
+ };
 @@ -2772,7 +2794,13 @@
  	}
  
@@ -261,6 +407,51 @@
  			ast_log(LOG_ERROR, "Jabber identity '%s' could not be created for client '%s' - client not active\n", cfg->user, cfg->name);
  			return -1;
  		}
+@@ -4035,7 +4091,7 @@
+ 		e->usage =
+ 			"Usage: xmpp list nodes <connection> [collection]\n"
+ 			"       Lists the user's nodes on the respective connection\n"
+-			"       ([connection] as configured in xmpp.conf.)\n";
++			"       ([connection] as configured in xmpp_oauth.conf.)\n";
+ 		return NULL;
+ 	case CLI_GENERATE:
+ 		return NULL;
+@@ -4121,7 +4177,7 @@
+ 		e->usage =
+ 			"Usage: xmpp purge nodes <connection> <node>\n"
+ 			"       Purges nodes on PubSub server\n"
+-			"       as configured in xmpp.conf.\n";
++			"       as configured in xmpp_oauth.conf.\n";
+ 			return NULL;
+ 	case CLI_GENERATE:
+ 		return NULL;
+@@ -4166,7 +4222,7 @@
+ 		e->usage =
+ 			"Usage: xmpp delete node <connection> <node>\n"
+ 			"       Deletes a node on PubSub server\n"
+-			"       as configured in xmpp.conf.\n";
++			"       as configured in xmpp_oauth.conf.\n";
+ 		return NULL;
+ 	case CLI_GENERATE:
+ 		return NULL;
+@@ -4203,7 +4259,7 @@
+ 		e->usage =
+ 			"Usage: xmpp create collection <connection> <collection>\n"
+ 			"       Creates a PubSub collection node using the account\n"
+-			"       as configured in xmpp.conf.\n";
++			"       as configured in xmpp_oauth.conf.\n";
+ 		return NULL;
+ 	case CLI_GENERATE:
+ 		return NULL;
+@@ -4243,7 +4299,7 @@
+ 		e->usage =
+ 			"Usage: xmpp create leaf <connection> <collection> <leaf>\n"
+ 			"       Creates a PubSub leaf node using the account\n"
+-			"       as configured in xmpp.conf.\n";
++			"       as configured in xmpp_oauth.conf.\n";
+ 		return NULL;
+ 	case CLI_GENERATE:
+ 		return NULL;
 @@ -4518,13 +4574,10 @@
  		ast_set2_flag(&cfg->flags, ast_true(var->value), XMPP_KEEPALIVE);
  	} else if (!strcasecmp(var->name, "autoprune")) {
