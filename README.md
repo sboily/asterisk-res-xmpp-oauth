@@ -37,7 +37,7 @@ Configuration
 
 Please edit xmpp_oauth.conf and motif.conf in /etc/asterisk/. (see samples in configs)
 
-Add gv.conf in /etc/asterisk/extensions_extra.d/
+Add gv.conf in /etc/asterisk/extensions_extra.d/ and edit this file to add your DID in GV_DID variables.
 
     chown asterisk.www-data /etc/asterisk/extensions_extra.d/gv.conf
     chmod 660 /etc/asterisk/extensions_extra.d/gv.conf
