@@ -31,3 +31,8 @@ Load the module:
     $ modules load res_xmpp_oauth.so
 
 Or add the module on your /etc/asterisk/modules.conf
+
+Configuration
+-------------
+
+Please edit xmpp_oauth.conf in /etc/asterisk/.
