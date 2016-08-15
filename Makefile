@@ -9,7 +9,8 @@
 
 INSTALL = install
 ASTETCDIR = $(INSTALL_PREFIX)/etc/asterisk
-SAMPLENAME = configs/xmpp_oauth.conf.sample
+SAMPLEDIR = configs
+SAMPLENAME = xmpp_oauth.conf.sample
 CONFNAME = $(basename $(SAMPLENAME))
 
 TARGET = res_xmpp_oauth.so
@@ -52,5 +53,5 @@ clean:
 	rm -f $(TARGET)
 
 samples:
-	$(INSTALL) -m 644 $(SAMPLENAME) $(DESTDIR)$(ASTETCDIR)/$(CONFNAME)
+	$(INSTALL) -m 644 $(SAMPLEDIR)/$(SAMPLENAME) $(DESTDIR)$(ASTETCDIR)/$(CONFNAME)
 	@echo " ------- res_xmpp_oauth config installed ---------"
