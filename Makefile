@@ -9,7 +9,7 @@
 
 INSTALL = install
 ASTETCDIR = $(INSTALL_PREFIX)/etc/asterisk
-SAMPLENAME = res_xmpp_oauth.conf.sample
+SAMPLENAME = xmpp_oauth.conf.sample
 CONFNAME = $(basename $(SAMPLENAME))
 
 TARGET = res_xmpp_oauth.so
