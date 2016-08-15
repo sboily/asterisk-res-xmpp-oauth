@@ -4,4 +4,4 @@
 	dh $@
 
 override_dh_strip:
-	dh_strip --dbg-package=res-xmpp-dbg
+	dh_strip --dbg-package=res-xmpp-oauth-dbg

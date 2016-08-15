@@ -1,18 +1,18 @@
-Source: res-xmpp
+Source: res-xmpp-oauth
 Priority: extra
 Maintainer: Sylvain Boily <sboily@proformatique.com>
 Build-Depends: debhelper (>= 7.0.50~), asterisk-dev (>= 13.10.0)
 Standards-Version: 3.8.4
 Section: comm
 
-Package: res-xmpp
+Package: res-xmpp-oauth
 Section: comm
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, asterisk (>= 13.10.0), libiksemel3
 Description: Module to add oauth support for xmpp Asterisk
  Module to add oauth support for xmpp Asterisk
 
-Package: res-xmpp-dbg
+Package: res-xmpp-oauth-dbg
 Section: comm
 Architecture: any
 Depends: res-xmpp (= ${Source-Version})
