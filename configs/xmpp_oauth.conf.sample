@@ -3,8 +3,8 @@
 [username_gmailcom]
 type=client
 serverhost=talk.google.com
-username=<username>@gmail.com
-secret=<oauth_token>
+username=<USERNAME>@gmail.com
+secret=<OAUTH_TOKEN>
 port=5222
 usetls=yes
 usesasl=yes

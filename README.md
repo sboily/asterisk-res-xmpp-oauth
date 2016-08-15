@@ -35,4 +35,12 @@ Or add the module on your /etc/asterisk/modules.conf
 Configuration
 -------------
 
-Please edit xmpp_oauth.conf in /etc/asterisk/.
+Please edit xmpp_oauth.conf and motif.conf in /etc/asterisk/. (see samples in configs)
+
+Add gv.conf in /etc/asterisk/extensions_extra.d/
+
+    chown asterisk.www-data /etc/asterisk/extensions_extra.d/gv.conf
+    chmod 660 /etc/asterisk/extensions_extra.d/gv.conf
+    asterisk -rx "core reload"
+
+Add your google voice DID in incoming call on the xivo web interface.
