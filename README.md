@@ -26,6 +26,7 @@ the 'make install' command:
 
 Load the module:
 
+    $ systemctl restart asterisk
     $ asterisk -r
     $ modules load res_xmpp_oauth.so
 

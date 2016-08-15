@@ -1,0 +1,14 @@
+[general]
+
+[username_gmailcom]
+type=client
+serverhost=talk.google.com
+username=<username>@gmail.com
+secret=<oauth_token>
+port=5222
+usetls=yes
+usesasl=yes
+status=available
+statusmessage="I am Available"
+timeout=5
+priority=127
