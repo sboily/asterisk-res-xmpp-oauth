@@ -1,5 +1,5 @@
 #
-# Makefile for Asterisk discovery consul resource
+# Makefile for Asterisk xmpp oauth2 ressource
 # Copyright (C) 2015, Sylvain Boily
 #
 # This program is free software, distributed under the terms of
