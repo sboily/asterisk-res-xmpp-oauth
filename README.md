@@ -45,6 +45,8 @@ Configuration
 
 Please edit xmpp_oauth.conf and motif.conf in /etc/asterisk/. (see samples in configs)
 
+To get a token please follow this documentation : http://pbxinaflash.com/community/resources/incredible-pbx-google-voice-oauth.46/
+
 You need to add icesupport=yes in /etc/asterisk/rtp.conf.
 
 Add gv.conf in /etc/asterisk/extensions_extra.d/ and edit this file to add your DID in GV_DID variables.
