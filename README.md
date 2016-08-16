@@ -36,6 +36,7 @@ Load the module:
     $ systemctl restart asterisk
     $ asterisk -r
     $ modules load res_xmpp_oauth.so
+    $ modules load chan_motif.so
 
 Or add the module on your /etc/asterisk/modules.conf
 
