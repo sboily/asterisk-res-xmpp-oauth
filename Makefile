@@ -51,6 +51,7 @@ install: $(TARGET)
 clean:
 	rm -f $(OBJECTS)
 	rm -f $(TARGET)
+	patch -p0 -R < debian/patches/oauth_support.diff
 
 samples:
 	$(INSTALL) -m 644 $(SAMPLEDIR)/$(SAMPLENAME) $(DESTDIR)$(ASTETCDIR)/$(CONFNAME)
