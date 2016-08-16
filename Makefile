@@ -1,6 +1,6 @@
 #
 # Makefile for Asterisk xmpp oauth2 ressource
-# Copyright (C) 2015, Sylvain Boily
+# Copyright (C) 2016, Sylvain Boily
 #
 # This program is free software, distributed under the terms of
 # the GNU General Public License Version 3. See the COPYING file
