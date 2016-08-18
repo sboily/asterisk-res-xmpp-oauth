@@ -12,6 +12,8 @@ Tested with xivo 16.10. (Thanks to Ward Mundy to give me the informations and th
 - http://nerdvittles.com
 - https://wiki.asterisk.org/wiki/display/AST/Calling+using+Google
 
+Tutorial to use it with incrediblepbx for XiVO is here : http://nerdvittles.com/?p=19169
+
 Requirements
 ------------
 - Asterisk 13.x (or later) header files (http://asterisk.org)
