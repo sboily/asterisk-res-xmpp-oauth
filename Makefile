@@ -16,7 +16,7 @@ CONFNAME = $(basename $(SAMPLENAME))
 TARGET = res_xmpp_oauth.so
 OBJECTS = res_xmpp.o
 CFLAGS += -Wall -Wextra -Wno-unused-parameter -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Winit-self -Wmissing-format-attribute \
-          -Wformat=2 -g -fPIC -D_GNU_SOURCE -D'AST_MODULE="res_xmpp"'
+          -Wformat=2 -g -fPIC -D_GNU_SOURCE -D'AST_MODULE="res_xmpp"' -D'AST_MODULE_SELF_SYM=__internal_res_xmpp_oauth_self'
 LIBS += -liksemel
 LDFLAGS = -Wall -shared
 

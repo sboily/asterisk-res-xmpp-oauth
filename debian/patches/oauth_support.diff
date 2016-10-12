@@ -1,5 +1,5 @@
---- res_xmpp.orig.c	2016-08-15 13:22:05.759197647 -0400
-+++ res_xmpp.c	2016-08-15 13:20:06.576062286 -0400
+--- res_xmpp.c.orig	2016-10-12 09:18:30.050311280 -0400
++++ res_xmpp.c	2016-10-12 09:23:44.799365117 -0400
 @@ -5,6 +5,21 @@
   *
   * Joshua Colp <jcolp@digium.com>
@@ -31,16 +31,16 @@
   *
   */
  
-@@ -48,7 +63,7 @@
+@@ -48,8 +63,6 @@
  
  #include "asterisk.h"
  
--ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 428681 $")
- 
+-ASTERISK_REGISTER_FILE()
+-
  #include <ctype.h>
  #include <iksemel.h>
-@@ -61,16 +76,17 @@
+ 
+@@ -61,16 +74,17 @@
  #include "asterisk/manager.h"
  #include "asterisk/cli.h"
  #include "asterisk/config_options.h"
@@ -60,7 +60,7 @@
  			</parameter>
  			<parameter name="jid" required="true">
  				<para>Jabber ID of the buddy to send the message to. It can be a
-@@ -86,21 +102,21 @@
+@@ -86,21 +100,21 @@
  			<replaceable>jid</replaceable></para>
  			<para>Example: JabberSend(asterisk,bob@domain.com,Hello world) sends "Hello world"
  			to <replaceable>bob@domain.com</replaceable> as an XMPP message from the account
@@ -87,7 +87,7 @@
  			</parameter>
  			<parameter name="jid" required="true">
  				<para>Jabber ID of the buddy to receive message from. It can be a
-@@ -115,21 +131,21 @@
+@@ -115,21 +129,21 @@
  			from the buddy identified by <replaceable>jid</replaceable> and returns the contents.</para>
  			<para>Example: ${JABBER_RECEIVE(asterisk,bob@domain.com)} returns an XMPP message
  			sent from <replaceable>bob@domain.com</replaceable> (or nothing in case of a time out), to
@@ -114,7 +114,7 @@
  			</parameter>
  			<parameter name="jid" required="true">
  				<para>Jabber ID of the buddy to receive message from. It can be a
-@@ -145,14 +161,14 @@
+@@ -145,14 +159,14 @@
  			<para>If not in roster variable will be set to 7.</para>
  			<para>Example: ${JABBER_STATUS(asterisk,bob@domain.com)} returns 1 if
  			<replaceable>bob@domain.com</replaceable> is online. <replaceable>asterisk</replaceable> is
@@ -133,7 +133,7 @@
  		<synopsis>
  			Send a Jabber Message to a specified chat room
  		</synopsis>
-@@ -175,7 +191,7 @@
+@@ -175,7 +189,7 @@
  			<note><para>To be able to send messages to a chat room, a user must have previously joined it. Use the <replaceable>JabberJoin</replaceable> function to do so.</para></note>
  		</description>
  	</application>
@@ -142,7 +142,7 @@
  		<synopsis>
  			Join a chat room
  		</synopsis>
-@@ -195,7 +211,7 @@
+@@ -195,7 +209,7 @@
  			<para>Allows Asterisk to join a chat room.</para>
  		</description>
  	</application>
@@ -151,7 +151,7 @@
  		<synopsis>
  			Leave a chat room
  		</synopsis>
-@@ -214,7 +230,7 @@
+@@ -214,7 +228,7 @@
  			<para>Allows Asterisk to leave a chat room.</para>
  		</description>
  	</application>
@@ -160,7 +160,7 @@
  		<synopsis>
  			Retrieve the status of a jabber list member
  		</synopsis>
-@@ -258,7 +274,7 @@
+@@ -258,7 +272,7 @@
  			</enumlist>
  		</description>
  	</application>
@@ -169,7 +169,7 @@
  		<synopsis>
  			Sends a message to a Jabber Client.
  		</synopsis>
-@@ -284,12 +300,12 @@
+@@ -284,12 +298,12 @@
  	</info>
  	<info name="XMPPMessageFromInfo" language="en_US" tech="XMPP">
  		<para>Specifying a prefix of <literal>xmpp:</literal> will specify the
@@ -185,7 +185,7 @@
  			<configObject name="global">
  				<synopsis>Global configuration settings</synopsis>
  				<configOption name="debug">
-@@ -323,6 +339,9 @@
+@@ -323,6 +337,9 @@
  				<configOption name="secret">
  					<synopsis>XMPP password</synopsis>
  				</configOption>
@@ -195,7 +195,7 @@
  				<configOption name="serverhost">
  					<synopsis>Route to server, e.g. talk.google.com</synopsis>
  				</configOption>
-@@ -461,6 +480,7 @@
+@@ -461,6 +478,7 @@
  		AST_STRING_FIELD(name);        /*!< Name of the client connection */
  		AST_STRING_FIELD(user);        /*!< Username to use for authentication */
  		AST_STRING_FIELD(password);    /*!< Password to use for authentication */
@@ -203,7 +203,7 @@
  		AST_STRING_FIELD(server);      /*!< Server hostname */
  		AST_STRING_FIELD(statusmsg);   /*!< Status message for presence */
  		AST_STRING_FIELD(pubsubnode);  /*!< Pubsub node */
-@@ -470,7 +490,6 @@
+@@ -470,7 +488,6 @@
  	int message_timeout;            /*!< Timeout for messages */
  	int priority;                   /*!< Resource priority */
  	struct ast_flags flags;         /*!< Various options that have been set */
@@ -211,7 +211,7 @@
  	enum ikshowtype status;         /*!< Presence status */
  	struct ast_xmpp_client *client; /*!< Pointer to the client */
  	struct ao2_container *buddies;  /*!< Configured buddies */
-@@ -529,6 +548,7 @@
+@@ -529,6 +546,7 @@
  static ast_mutex_t messagelock;
  
  static int xmpp_client_config_post_apply(void *obj, void *arg, int flags);
@@ -219,7 +219,7 @@
  
  /*! \brief Destructor function for configuration */
  static void ast_xmpp_client_config_destructor(void *obj)
-@@ -743,6 +763,8 @@
+@@ -743,6 +761,8 @@
  		goto error;
  	}
  
@@ -228,7 +228,7 @@
  	if (!(cfg->clients = ao2_container_alloc(1, xmpp_config_hash, xmpp_config_cmp))) {
  		goto error;
  	}
-@@ -762,8 +784,8 @@
+@@ -762,8 +782,8 @@
  	if (ast_strlen_zero(clientcfg->user)) {
  		ast_log(LOG_ERROR, "No user specified on client '%s'\n", clientcfg->name);
  		return -1;
@@ -239,7 +239,7 @@
  		return -1;
  	} else if (ast_strlen_zero(clientcfg->server)) {
  		ast_log(LOG_ERROR, "No server specified on client '%s'\n", clientcfg->name);
-@@ -778,7 +800,7 @@
+@@ -778,7 +798,7 @@
  
  	/* If any configuration options are changing that would require reconnecting set the bit so we will do so if possible */
  	if (strcmp(clientcfg->user, oldclientcfg->user) ||
@@ -248,7 +248,7 @@
  	    strcmp(clientcfg->server, oldclientcfg->server) ||
  	    (clientcfg->port != oldclientcfg->port) ||
  	    (ast_test_flag(&clientcfg->flags, XMPP_COMPONENT) != ast_test_flag(&oldclientcfg->flags, XMPP_COMPONENT)) ||
-@@ -822,7 +844,7 @@
+@@ -822,7 +842,7 @@
  struct aco_type *client_options[] = ACO_TYPES(&client_option);
  
  struct aco_file res_xmpp_conf = {
@@ -257,7 +257,7 @@
  	.alias = "jabber.conf",
  	.types = ACO_TYPES(&global_option, &client_option),
  };
-@@ -2772,7 +2794,13 @@
+@@ -2772,7 +2792,13 @@
  	}
  
  	iks_insert_attrib(auth, "xmlns", IKS_NS_XMPP_SASL);
@@ -272,7 +272,7 @@
  
  	if (strchr(client->jid->user, '/')) {
  		char *user = ast_strdupa(client->jid->user);
-@@ -3130,10 +3158,6 @@
+@@ -3130,10 +3156,6 @@
  /*! \brief Internal function called when we authenticated as a component */
  static int xmpp_component_authenticating(struct ast_xmpp_client *client, struct ast_xmpp_client_config *cfg, int type, iks *node)
  {
@@ -283,7 +283,7 @@
  	if (strcmp(iks_name(node), "handshake")) {
  		ast_log(LOG_ERROR, "Failed to authenticate component '%s'\n", client->name);
  		return -1;
-@@ -3309,11 +3333,6 @@
+@@ -3309,11 +3331,6 @@
  	int status = pak->show ? pak->show : STATUS_DISAPPEAR;
  	enum ast_device_state state = AST_DEVICE_UNAVAILABLE;
  
@@ -295,7 +295,7 @@
  	/* If no resource is available this is a general buddy presence update, which we will ignore */
  	if (!pak->from->resource) {
  		return 0;
-@@ -3328,6 +3347,11 @@
+@@ -3328,6 +3345,11 @@
  		return 0;
  	}
  
@@ -307,7 +307,7 @@
  	ao2_lock(buddy->resources);
  
  	if (!(resource = ao2_callback(buddy->resources, OBJ_NOLOCK, xmpp_resource_cmp, pak->from->resource))) {
-@@ -3572,12 +3596,12 @@
+@@ -3572,12 +3594,12 @@
  	}
  
  	if (client->mwi_sub) {
@@ -322,7 +322,7 @@
  		xmpp_pubsub_unsubscribe(client, "device_state");
  	}
  
-@@ -3612,6 +3636,10 @@
+@@ -3612,6 +3634,10 @@
  		return -1;
  	}
  
@@ -333,7 +333,7 @@
  	ast_xmpp_client_disconnect(client);
  
  	client->timeout = 50;
-@@ -3754,12 +3782,12 @@
+@@ -3754,12 +3780,12 @@
  
  	do {
  		if (client->state == XMPP_STATE_DISCONNECTING) {
@@ -348,7 +348,7 @@
  			if ((res = xmpp_client_reconnect(client)) != IKS_OK) {
  				sleep(4);
  				res = IKS_NET_RWERR;
-@@ -3835,17 +3863,45 @@
+@@ -3835,17 +3861,45 @@
  	return 1;
  }
  
@@ -398,7 +398,7 @@
  	if (cfg->client->reconnect) {
  		/* Disconnect the existing session since our role is changing, or we are starting up */
  		ast_xmpp_client_disconnect(cfg->client);
-@@ -3868,7 +3924,7 @@
+@@ -3868,7 +3922,7 @@
  			cfg->client->jid = iks_id_new(cfg->client->stack, cfg->user);
  		}
  
@@ -407,7 +407,7 @@
  			ast_log(LOG_ERROR, "Jabber identity '%s' could not be created for client '%s' - client not active\n", cfg->user, cfg->name);
  			return -1;
  		}
-@@ -4035,7 +4091,7 @@
+@@ -4035,7 +4089,7 @@
  		e->usage =
  			"Usage: xmpp list nodes <connection> [collection]\n"
  			"       Lists the user's nodes on the respective connection\n"
@@ -416,7 +416,7 @@
  		return NULL;
  	case CLI_GENERATE:
  		return NULL;
-@@ -4121,7 +4177,7 @@
+@@ -4121,7 +4175,7 @@
  		e->usage =
  			"Usage: xmpp purge nodes <connection> <node>\n"
  			"       Purges nodes on PubSub server\n"
@@ -425,7 +425,7 @@
  			return NULL;
  	case CLI_GENERATE:
  		return NULL;
-@@ -4166,7 +4222,7 @@
+@@ -4166,7 +4220,7 @@
  		e->usage =
  			"Usage: xmpp delete node <connection> <node>\n"
  			"       Deletes a node on PubSub server\n"
@@ -434,7 +434,7 @@
  		return NULL;
  	case CLI_GENERATE:
  		return NULL;
-@@ -4203,7 +4259,7 @@
+@@ -4203,7 +4257,7 @@
  		e->usage =
  			"Usage: xmpp create collection <connection> <collection>\n"
  			"       Creates a PubSub collection node using the account\n"
@@ -443,7 +443,7 @@
  		return NULL;
  	case CLI_GENERATE:
  		return NULL;
-@@ -4243,7 +4299,7 @@
+@@ -4243,7 +4297,7 @@
  		e->usage =
  			"Usage: xmpp create leaf <connection> <collection> <leaf>\n"
  			"       Creates a PubSub leaf node using the account\n"
@@ -452,7 +452,7 @@
  		return NULL;
  	case CLI_GENERATE:
  		return NULL;
-@@ -4518,13 +4574,10 @@
+@@ -4518,13 +4572,10 @@
  		ast_set2_flag(&cfg->flags, ast_true(var->value), XMPP_KEEPALIVE);
  	} else if (!strcasecmp(var->name, "autoprune")) {
  		ast_set2_flag(&cfg->flags, ast_true(var->value), XMPP_AUTOPRUNE);
@@ -466,7 +466,7 @@
  	} else if (!strcasecmp(var->name, "sendtodialplan")) {
  		ast_set2_flag(&cfg->flags, ast_true(var->value), XMPP_SEND_TO_DIALPLAN);
  	} else {
-@@ -4606,7 +4659,7 @@
+@@ -4606,7 +4657,7 @@
  	aco_option_register_custom(&cfg_info, "auth_policy", ACO_EXACT, global_options, "accept", global_bitfield_handler, 0);
  
  	aco_option_register(&cfg_info, "username", ACO_EXACT, client_options, NULL, OPT_STRINGFIELD_T, 0, STRFLDSET(struct ast_xmpp_client_config, user));
@@ -475,7 +475,7 @@
  	aco_option_register(&cfg_info, "serverhost", ACO_EXACT, client_options, NULL, OPT_STRINGFIELD_T, 0, STRFLDSET(struct ast_xmpp_client_config, server));
  	aco_option_register(&cfg_info, "statusmessage", ACO_EXACT, client_options, "Online and Available", OPT_STRINGFIELD_T, 0, STRFLDSET(struct ast_xmpp_client_config, statusmsg));
  	aco_option_register(&cfg_info, "pubsub_node", ACO_EXACT, client_options, NULL, OPT_STRINGFIELD_T, 0, STRFLDSET(struct ast_xmpp_client_config, pubsubnode));
-@@ -4615,11 +4668,6 @@
+@@ -4615,11 +4666,6 @@
  	aco_option_register(&cfg_info, "port", ACO_EXACT, client_options, "5222", OPT_UINT_T, 0, FLDSET(struct ast_xmpp_client_config, port));
  	aco_option_register(&cfg_info, "timeout", ACO_EXACT, client_options, "5", OPT_UINT_T, 0, FLDSET(struct ast_xmpp_client_config, message_timeout));
  
@@ -487,7 +487,7 @@
  	aco_option_register_custom(&cfg_info, "debug", ACO_EXACT, client_options, "no", client_bitfield_handler, 0);
  	aco_option_register_custom(&cfg_info, "type", ACO_EXACT, client_options, "client", client_bitfield_handler, 0);
  	aco_option_register_custom(&cfg_info, "distribute_events", ACO_EXACT, client_options, "no", client_bitfield_handler, 0);
-@@ -4627,6 +4675,9 @@
+@@ -4627,6 +4673,9 @@
  	aco_option_register_custom(&cfg_info, "usesasl", ACO_EXACT, client_options, "yes", client_bitfield_handler, 0);
  	aco_option_register_custom(&cfg_info, "forceoldssl", ACO_EXACT, client_options, "no", client_bitfield_handler, 0);
  	aco_option_register_custom(&cfg_info, "keepalive", ACO_EXACT, client_options, "yes", client_bitfield_handler, 0);
@@ -497,11 +497,11 @@
  	aco_option_register_custom(&cfg_info, "sendtodialplan", ACO_EXACT, client_options, "no", client_bitfield_handler, 0);
  	aco_option_register_custom(&cfg_info, "status", ACO_EXACT, client_options, "available", client_status_handler, 0);
  	aco_option_register_custom(&cfg_info, "buddy", ACO_EXACT, client_options, NULL, client_buddy_handler, 0);
-@@ -4665,7 +4716,6 @@
+@@ -4665,7 +4714,6 @@
  }
  
  AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_GLOBAL_SYMBOLS | AST_MODFLAG_LOAD_ORDER, "Asterisk XMPP Interface",
--		.support_level = AST_MODULE_SUPPORT_CORE,
- 		.load = load_module,
- 		.unload = unload_module,
- 		.reload = reload,
+-	.support_level = AST_MODULE_SUPPORT_CORE,
+ 	.load = load_module,
+ 	.unload = unload_module,
+ 	.reload = reload,
