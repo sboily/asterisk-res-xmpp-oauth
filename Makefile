@@ -20,10 +20,6 @@ CFLAGS += -Wall -Wextra -Wno-unused-parameter -Wstrict-prototypes -Wmissing-prot
 LIBS += -liksemel
 LDFLAGS = -Wall -shared
 
-ifdef VERSION
-	CFLAGS += -D'VERSION="$(VERSION)"'
-endif
-
 .PHONY: install clean
 
 $(TARGET): $(OBJECTS)
