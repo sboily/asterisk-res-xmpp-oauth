@@ -3,9 +3,9 @@ Google Voice support for XIVO with oauth2
 
 This provides an XMPP module for Asterisk with oauth support, which allows you to use
 google voice with Asterisk.
-It works with asterisk versions 13.x or later.
+It works with asterisk versions 13 or later.
 
-The source of the patches is in debian/patches directory. The res_xmpp.c is from asterisk vanilla 13.10.0 sources.
+The source of the patches is in debian/patches directory. The res_xmpp.c is from asterisk vanilla 14.0.2 sources.
 
 Tested with xivo 16.10. (Thanks to Ward Mundy to give me the informations and thank to Asterisk wiki for the documentation)
 
@@ -16,7 +16,7 @@ Tutorial to use it with incrediblepbx for XiVO is here : http://nerdvittles.com/
 
 Requirements
 ------------
-- Asterisk 13.x (or later) header files (http://asterisk.org)
+- Asterisk 13 (or later) header files (http://asterisk.org)
 - libiksemel libraries and header files
 - libssl libraries and header files
 - patch command
