@@ -1,4 +1,4 @@
-Google Voice support for XIVO with oauth2
+Google Voice support for Wazo with oauth2
 =========================================
 
 This provides an XMPP module for Asterisk with oauth support, which allows you to use
@@ -12,7 +12,7 @@ Tested with xivo 16.10. (Thanks to Ward Mundy to give me the informations and th
 - http://nerdvittles.com
 - https://wiki.asterisk.org/wiki/display/AST/Calling+using+Google
 
-Tutorial to use it with incrediblepbx for XiVO is here : http://nerdvittles.com/?p=19169
+Tutorial to use it with incrediblepbx for Wazo is here : http://nerdvittles.com/?p=19169
 
 Requirements
 ------------
@@ -57,7 +57,7 @@ Add gv.conf in /etc/asterisk/extensions_extra.d/ and edit this file to add your 
     chmod 660 /etc/asterisk/extensions_extra.d/gv.conf
     asterisk -rx "core reload"
 
-Add your google voice DID in incoming call on the xivo web interface.
+Add your google voice DID in incoming call on the wazo web interface.
 
 To do call with google voice add a custom trunk with:
 
