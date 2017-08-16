@@ -1,3 +1,12 @@
+!!!!! WARNING !!!!!
+
+WILL BE DEPRECATING WITH THE NEXT ASTERISK 14.7 VERSION, OAUTH SUPPORT IS NOW INCLUDED
+
+https://github.com/asterisk/asterisk/commit/dc4435f68dd50cb1fbf40a8d49aa3c906ea6d125
+
+!!!!! WARNING !!!!!
+
+
 Google Voice support for Wazo with oauth2
 =========================================
 
